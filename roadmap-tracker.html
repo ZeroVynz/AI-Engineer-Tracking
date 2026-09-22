@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peta jalan model analisis agnostik</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Ctext y=%22.9em%22 font-size=%2290%22%3E%F0%9F%A7%AD%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F5; --surface:#FFFFFF; --ink:#101A33; --muted:#565F7B; --line:#D3D9E6; --track:#DCE1EE;
+  --w:#2440E0; --on-w:#FFFFFF; --p:#0B7F6E; --o:#6F7592; --now:#D6336C;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1426; --surface:#171E38; --ink:#E7EBF8; --muted:#9AA3C2; --line:#2A3357; --track:#28315A;
+    --w:#7C93FF; --on-w:#0F1426; --p:#3CCBB4; --o:#98A0BD; --now:#FF6B9A;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1426; --surface:#171E38; --ink:#E7EBF8; --muted:#9AA3C2; --line:#2A3357; --track:#28315A;
+  --w:#7C93FF; --on-w:#0F1426; --p:#3CCBB4; --o:#98A0BD; --now:#FF6B9A;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:1rem}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 "Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--w);outline-offset:2px}
+.wrap{max-width:980px;margin:0 auto;padding:1.75rem 1rem 4rem}
+h1,h2,h3,.ph-title b{font-family:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif}
+h1{font-size:clamp(1.6rem,4.2vw,2.3rem);line-height:1.12;letter-spacing:-.01em;margin:0 0 .5rem;max-width:30ch}
+h2{font-size:1.15rem;margin:0 0 .25rem}
+.lede{margin:0 0 1.25rem;color:var(--muted);max-width:62ch}
+
+.summary{display:grid;gap:.6rem}
+.meter{display:block;height:.4rem;background:var(--track);border-radius:99px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--w)}
+.meter.big{height:.6rem}
+.sumtext{margin:0}
+.startrow{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:center;color:var(--muted);font-size:.9rem}
+.startrow input{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.25rem .5rem}
+.pace{max-width:60ch}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;margin-top:1.25rem}
+.tl-scroll{overflow-x:auto;padding-top:.25rem}
+.timeline{position:relative;min-width:720px;--label:10.5rem;padding-bottom:1.8rem}
+.trow{display:grid;grid-template-columns:var(--label) 1fr;align-items:center;min-height:2rem}
+.tlabel{background:none;border:0;padding:.2rem .6rem .2rem 0;text-align:left;cursor:pointer;display:flex;justify-content:space-between;gap:.5rem}
+.tlabel:hover .tname{text-decoration:underline}
+.tcount{color:var(--muted);font-variant-numeric:tabular-nums}
+.tbars{display:grid;grid-template-columns:repeat(36,1fr);align-items:center}
+.thead .tbars span{font-size:.8rem;color:var(--muted);border-left:1px solid var(--line);padding-left:.4rem}
+.bar{position:relative;height:.9rem;border:0;padding:0;border-radius:3px;cursor:pointer;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--w)}
+.bar.crit{background:var(--track)}
+.bar.par{background:repeating-linear-gradient(135deg,var(--track) 0 4px,var(--surface) 4px 8px)}
+.bar.par i{background:var(--p)}
+.overlay{position:absolute;inset:0;pointer-events:none}
+.guide,.now{position:absolute;top:0;bottom:1.6rem;width:1px;left:calc(var(--label) + (100% - var(--label)) * var(--f))}
+.guide{background:var(--line)}
+.now{background:var(--now);width:2px;margin-left:-1px}
+.now span{position:absolute;bottom:-1.5rem;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:.8rem;font-weight:600;color:var(--now)}
+.legend{display:flex;flex-wrap:wrap;gap:.5rem 1.25rem;margin-top:.75rem;font-size:.85rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:.4rem}
+.swatch{display:inline-block;width:1.6rem;height:.6rem;border-radius:2px}
+.swatch.crit{background:var(--w)}
+.swatch.par{background:repeating-linear-gradient(135deg,var(--p) 0 3px,var(--surface) 3px 6px);outline:1px solid var(--p)}
+
+.tag{display:inline-block;border-radius:999px;padding:.05rem .6rem;font-size:.78rem;font-weight:600;white-space:nowrap;align-self:start;margin-top:.1rem}
+.tag.w{background:var(--w);color:var(--on-w);border:1.5px solid var(--w)}
+.tag.p{border:1.5px solid var(--p);color:var(--p)}
+.tag.o{border:1.5px dashed var(--o);color:var(--muted)}
+
+.next-grid{display:grid;gap:1rem 2rem;grid-template-columns:1fr;margin-top:.75rem}
+@media (min-width:760px){.next-grid{grid-template-columns:1.2fr 1fr}}
+.next-grid h3{font-size:.95rem;margin:0 0 .25rem}
+.from{color:var(--muted);font-size:.8rem}
+
+.filters{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1.5rem 0 .25rem}
+.chip{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:.25rem .8rem;cursor:pointer;font-size:.88rem}
+.chip[aria-pressed="true"]{border-color:var(--ink)}
+.chip[aria-pressed="false"]{opacity:.55}
+.hide-done{display:inline-flex;gap:.4rem;align-items:center;margin-left:auto;font-size:.88rem;color:var(--muted);cursor:pointer}
+
+.phase{margin-top:.75rem;background:var(--surface);border:1px solid var(--line);border-radius:10px;scroll-margin-top:1rem}
+.phase.current{border-left:4px solid var(--w)}
+.phase summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.9rem 1.1rem}
+.phase summary::-webkit-details-marker{display:none}
+.ph-title{display:flex;align-items:center;gap:.7rem}
+.ph-title::before{content:"";width:.5rem;height:.5rem;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);transition:transform .15s;flex:none}
+details[open] > summary .ph-title::before{transform:rotate(45deg)}
+.ph-title b{font-size:1.08rem;display:block}
+.ph-when{display:block;color:var(--muted);font-size:.85rem}
+.badge{display:inline-block;margin-left:.5rem;border-radius:999px;background:var(--w);color:var(--on-w);padding:0 .55rem;font-size:.75rem;font-weight:600;vertical-align:middle}
+.ph-prog{display:flex;align-items:center;gap:.6rem;font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;flex:none}
+.ph-prog .meter{width:6rem}
+.body{padding:0 1.1rem 1.1rem}
+.goal{margin:0 0 .6rem;color:var(--muted);max-width:68ch}
+.tasks{list-style:none;margin:0;padding:0}
+.task{display:grid;grid-template-columns:1fr auto;gap:.75rem;padding:.6rem 0;border-top:1px solid var(--line)}
+.task label{display:flex;gap:.7rem;align-items:flex-start;cursor:pointer}
+.task input,.gate input{width:1.1rem;height:1.1rem;margin:.2rem 0 0;accent-color:var(--w);flex:none}
+.tt{display:block}
+.title{display:block}
+.note{display:block;color:var(--muted);font-size:.85rem;max-width:64ch}
+.task.done .title{text-decoration:line-through;color:var(--muted)}
+.empty{color:var(--muted);margin:.5rem 0;font-size:.9rem}
+.gate{display:flex;gap:.7rem;align-items:flex-start;margin-top:.9rem;padding:.75rem .9rem;border:1.5px solid var(--ink);border-left-width:5px;border-radius:6px;cursor:pointer}
+.gate b{display:block}
+.gate.done{opacity:.75}
+
+.tools{margin-top:2rem;display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;color:var(--muted);font-size:.88rem}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:.35rem .8rem;cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+.btn.danger.armed{border-color:var(--now);color:var(--now)}
+.warn{margin:.75rem 0 0;color:var(--now);font-size:.88rem}
+dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:1.1rem;width:min(560px,92vw)}
+dialog::backdrop{background:rgba(10,14,30,.55)}
+dialog h3{margin:0 0 .25rem}
+dialog textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.5rem;margin:.5rem 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem}
+.dlg-actions{display:flex;gap:.5rem;flex-wrap:wrap}
+[hidden]{display:none !important}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;scroll-behavior:auto !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Peta jalan: model analisis yang bisa dicolok ke SLM apa pun</h1>
+    <p class="lede">36 bulan dari laptop 16 GB sampai pilot pertama. Centang tugas, pantau fase, dan lihat mana yang boleh jalan bersamaan.</p>
+    <div class="summary" id="summary"></div>
+  </header>
+
+  <section class="card" aria-labelledby="tl-h">
+    <h2 id="tl-h">Garis waktu</h2>
+    <div class="tl-scroll"><div class="timeline" id="timeline"></div></div>
+    <div class="legend">
+      <span><i class="swatch crit"></i>Bar penuh: jalur kritis, dikerjakan berurutan</span>
+      <span><i class="swatch par"></i>Bar bergaris: berjalan paralel dengan fase lain</span>
+      <span>Isi bar menunjukkan tugas yang sudah selesai</span>
+    </div>
+  </section>
+
+  <section class="card" id="next" aria-live="polite"></section>
+
+  <div class="filters" id="filters"></div>
+  <div id="phases"></div>
+
+  <section class="card" aria-labelledby="ag-h" style="margin-top:2rem;border-top:3px solid var(--p)">
+    <h2 id="ag-h">Jalur Agency</h2>
+    <p class="lede" style="margin-bottom:.75rem">Terpisah total dari 87 tugas ML di atas — tidak ikut dihitung ke progres ML. Prioritas saat ini: sebagian besar jam mingguan ke sini dulu (funding + praktik), ML jalan ringan di latar belakang. Progres di sini ikut tersimpan lewat Ekspor/Impor progres di bawah.</p>
+    <div id="agency-summary"></div>
+  </section>
+  <div id="agency-phases"></div>
+
+  <div class="tools">
+    <span>Progres tersimpan di browser ini.</span>
+    <button class="btn" id="btn-export" type="button">Ekspor progres</button>
+    <button class="btn" id="btn-import" type="button">Impor progres</button>
+    <button class="btn danger" id="btn-reset" type="button">Reset semua</button>
+  </div>
+  <p class="warn" id="storage-warn" hidden>Browser ini memblokir penyimpanan, jadi progres hilang saat halaman ditutup. Pakai Ekspor progres untuk menyimpannya.</p>
+</div>
+
+<dialog id="dlg">
+  <h3 id="dlg-title"></h3>
+  <p id="dlg-help" class="lede" style="margin:0"></p>
+  <textarea id="dlg-text" rows="8" spellcheck="false"></textarea>
+  <div class="dlg-actions">
+    <button class="btn" id="dlg-copy" type="button">Salin</button>
+    <button class="btn" id="dlg-apply" type="button">Terapkan</button>
+    <button class="btn" id="dlg-close" type="button">Tutup</button>
+  </div>
+  <p id="dlg-msg" role="status" class="from"></p>
+</dialog>
+
+<script>
+(function(){
+"use strict";
+
+var TOTAL_MONTHS = 36;
+var KEY = "mlroadmap:v1";
+var TAGS = {
+  W:{label:"Wajib", cls:"w"},
+  P:{label:"Paralel", cls:"p"},
+  O:{label:"Opsional", cls:"o"}
+};
+
+/* ---------- Data ---------- */
+var RAW = [
+ {id:"p0", short:"Fase 0 Setup", name:"Fase 0 · Setup", when:"Minggu 1–2", start:0, end:1, kind:"crit",
+  goal:"Punya lingkungan kerja dan SLM lokal yang bisa dipanggil dari kode.",
+  gate:"SLM berjalan lokal, dipanggil dari script Python, dan kodenya sudah ada di GitHub.",
+  tasks:[
+   ["W","Pasang Linux (WSL2, dual boot, atau VM) dan Git","Selesai kalau kamu bisa clone, commit, dan push repo sendiri."],
+   ["W","Buat akun GitHub, Hugging Face, Kaggle, dan Google Colab","Semua gratis. Colab dan Kaggle jadi GPU cadangan untuk nanti."],
+   ["W","Pasang Python dengan uv atau venv dan buat proyek pertama","Satu folder, satu environment, satu file dependensi."],
+   ["W","Pasang Ollama dan jalankan satu SLM open-weight ukuran 3–8B","RAM 16 GB cukup nyaman untuk model 7–8B terkuantisasi."],
+   ["W","Panggil SLM itu dari script Python lewat HTTP","Ini cikal bakal lapisan model-agnostic."],
+   ["P","Mulai dev log mingguan di repo: apa dikerjakan, apa macet, apa dipelajari","10 menit tiap akhir pekan. Jadi bahan tulisan dan pitch nanti."],
+   ["O","Cek spek laptop dan aktifkan virtualisasi di BIOS","Berguna kalau nanti butuh VM atau Docker."]
+  ]},
+ {id:"p1", short:"Fase 1 Fondasi", name:"Fase 1 · Fondasi engineering", when:"Bulan 1–4", start:1, end:4, kind:"crit",
+  goal:"Bisa membangun API, database, dan container tanpa mengikuti tutorial langkah demi langkah.",
+  gate:"Ada repo berisi API + Postgres + Docker Compose + test, dengan README yang jelas.",
+  tasks:[
+   ["W","Python serius: fungsi, class, type hints, error handling, modul","Selesai kalau bisa menulis program 300 baris yang rapi tanpa copy-paste."],
+   ["W","Testing dengan pytest","Setiap fungsi analisis nanti harus punya test."],
+   ["W","SQL: JOIN, GROUP BY, subquery, CTE, window function","Skill paling penting untuk produkmu. Latihan 3–5 soal per hari."],
+   ["W","pandas atau polars: bersihkan dan analisis satu dataset Kaggle",""],
+   ["W","Postgres di Docker, lalu muat dataset ke dalamnya",""],
+   ["W","Docker dan docker compose: app + database jalan dengan satu perintah",""],
+   ["W","FastAPI: bikin API baca/tulis ke Postgres",""],
+   ["W","Dasar Linux dan jaringan: permission, proses, port, DNS, curl, SSH","Ini juga fondasi keamanan yang kita bahas sebelumnya."],
+   ["W","Proyek 1: API analisis deterministik (tanpa LLM) yang menjawab pertanyaan statistik dari DB","Nanti jadi “alat” yang dipanggil model. Bagian ini yang membuat hasil bisa dipercaya."],
+   ["P","Statistik dasar: distribusi, korelasi, uji hipotesis, bias sampling","Analisis yang salah secara statistik lebih berbahaya daripada tidak ada analisis."],
+   ["P","Baca dokumentasi teknis berbahasa Inggris 30 menit setiap hari",""],
+   ["O","Aljabar linear dan probabilitas (3Blue1Brown atau Khan Academy)","Boleh menunggu sampai kuliah, tapi membantu memahami fine-tuning."],
+   ["O","Lab purple team di dua laptop","Tunda. Baru berguna di Fase 6 untuk menguji keamanan sistemmu sendiri."]
+  ]},
+ {id:"p2", short:"Fase 2 Model-agnostic v0", name:"Fase 2 · Lapisan model-agnostic v0", when:"Bulan 4–8", start:4, end:8, kind:"crit",
+  goal:"Satu pertanyaan bisnis menghasilkan jawaban dari database, dan modelnya bisa diganti lewat konfigurasi.",
+  gate:"Pertanyaan yang sama berjalan di 3 model hanya dengan mengganti config, dan kamu sudah melihat sendiri di mana SLM gagal.",
+  tasks:[
+   ["W","Bikin satu antarmuka model yang bicara ke API kompatibel OpenAI","Ganti model = ganti satu baris config. Tidak ada kode yang tahu nama model."],
+   ["W","Structured output: paksa keluaran JSON sesuai skema, dengan validasi dan retry","SLM sering gagal di sini. Pakai Pydantic."],
+   ["W","Tool calling: model memanggil fungsi dari Proyek 1",""],
+   ["W","Text-to-SQL v0: skema → prompt → SQL → eksekusi → jawaban","Pakai user database read-only sejak hari pertama."],
+   ["W","Sandbox eksekusi kode Python (proses terpisah, timeout, tanpa jaringan)","Untuk analisis yang tidak cukup dengan SQL."],
+   ["W","Catat token, latensi, dan biaya setiap panggilan model","Sumber angka “biaya per jawaban benar” nanti."],
+   ["W","Retrieval dasar dengan embedding untuk mencari tabel, kolom, dan dokumentasi relevan",""],
+   ["W","Coba 3 model: 1 frontier lewat API dan 2 SLM lokal dari keluarga berbeda","Pasang batas pengeluaran di dashboard penyedia API sebelum mulai."],
+   ["P","Bandingkan teknik prompting (few-shot, langkah demi langkah, dekomposisi) dan catat hasilnya",""],
+   ["O","Baca 2 paper tentang text-to-SQL atau tool use",""],
+   ["O","Coba llama.cpp atau LiteLLM sebagai backend alternatif",""]
+  ]},
+ {id:"p3", short:"Fase 3 Harness evaluasi", name:"Fase 3 · Harness evaluasi (inti)", when:"Bulan 8–12", start:8, end:12, kind:"crit",
+  goal:"Bukti terukur. Tanpa ini, klaim “sama pintarnya dengan frontier” hanya opini.",
+  gate:"Ada tabel jujur “SLM mentah X% vs frontier Y%” plus daftar penyebab gap. Putuskan: kalau gap kecil, fokus ke produk; kalau sangat besar, persempit jenis tugasnya dulu.",
+  tasks:[
+   ["W","Bikin benchmark sendiri: 100–300 pertanyaan dengan jawaban emas di 2–3 domain","Pakai data sintetis atau publik. Jangan pakai data perusahaan yang bukan milikmu."],
+   ["W","Jalankan subset benchmark publik (Spider dan/atau BIRD)","Supaya angkamu bisa dibandingkan dengan dunia luar."],
+   ["W","Tetapkan metrik: akurasi eksekusi, kebenaran angka akhir, tingkat halusinasi, latensi, biaya per jawaban benar",""],
+   ["W","Bikin runner: satu perintah membandingkan N model dan menghasilkan tabel",""],
+   ["W","Ukur baseline: frontier vs SLM tanpa scaffolding","Catat gap apa adanya, jangan dipoles."],
+   ["W","Failure taxonomy: kelompokkan kesalahan (salah tabel, salah join, salah agregasi, salah tafsir, salah hitung)",""],
+   ["W","Jalankan tiap tes beberapa kali untuk melihat variansi","Hasil satu kali jalan menipu."],
+   ["P","Tulis hasilnya sebagai blog atau README publik",""],
+   ["O","LLM-as-judge untuk jawaban naratif, dikalibrasi dengan penilaian manusia",""]
+  ]},
+ {id:"p4", short:"Fase 4 Tutup gap", name:"Fase 4 · Menutup gap dengan sistem", when:"Bulan 12–18", start:12, end:18, kind:"crit",
+  goal:"SLM + scaffolding mendekati frontier pada tugas spesifik. Tiap teknik diuji, bukan diasumsikan.",
+  gate:"Pada minimal satu domain, SLM + sistem mencapai target yang kamu tetapkan di awal fase. Usulan: 90% akurasi frontier pada benchmark sendiri, dengan biaya jauh lebih rendah.",
+  tasks:[
+   ["W","Schema linking: pilih tabel dan kolom relevan sebelum menulis SQL",""],
+   ["W","Semantic layer: kamus metrik deterministik (“revenue”, “churn”, “aktif”)","Biasanya besar dampaknya karena model berhenti menebak definisi. Buktikan lewat ablation."],
+   ["W","Loop umpan balik eksekusi: SQL error atau hasil kosong membuat model memperbaiki",""],
+   ["W","Dekomposisi: rencana → langkah kecil → jalankan → gabungkan",""],
+   ["W","Verifier: cek kewajaran (jumlah baris, null, satuan, total silang) sebelum jawaban keluar",""],
+   ["W","Few-shot dinamis dari pertanyaan yang sudah terbukti benar",""],
+   ["W","Router/cascade: SLM dulu, eskalasi ke model lebih besar hanya bila keyakinan rendah","Ini yang menurunkan biaya tanpa mengorbankan mutu."],
+   ["W","Ablation: tabel kontribusi tiap teknik terhadap akurasi dan biaya",""],
+   ["P","Jalankan ulang harness setiap ada rilis model baru","Murah, karena tinggal satu perintah."],
+   ["O","Self-consistency (banyak sampel lalu voting)","Menambah latensi. Cek dulu apakah sepadan."]
+  ]},
+ {id:"p5", short:"Fase 5 Fine-tuning", name:"Fase 5 · Adaptasi model", when:"Bulan 18–24", start:18, end:24, kind:"crit",
+  goal:"Fine-tuning untuk memperkecil sisa gap tanpa merusak sifat agnostik.",
+  gate:"Swap-test lulus: ganti SLM, akurasi turun tidak lebih dari batas yang kamu tetapkan.",
+  tasks:[
+   ["W","Kumpulkan data latih: pertanyaan → rencana/SQL yang terverifikasi lewat eksekusi","Cek syarat layanan penyedia. Banyak yang melarang memakai keluarannya untuk melatih model pesaing. Pakai guru open-weight bila ragu."],
+   ["W","Fine-tune LoRA/QLoRA pada SLM di Colab, Kaggle, atau GPU sewa",""],
+   ["W","Evaluasi di domain yang tidak ikut dilatih","Ini yang membuktikan model tidak sekadar menghafal."],
+   ["W","Uji tukar model: minimal 3 SLM dari keluarga berbeda, ukur variansi akurasi","Inilah bukti klaim “agnostik”."],
+   ["W","Catat biaya GPU per eksperimen",""],
+   ["O","Kuantisasi (GGUF/AWQ) dan ukur tukar-guling akurasi vs kecepatan",""],
+   ["O","DPO atau tuning preferensi",""],
+   ["O","Adapter per klien atau per domain",""]
+  ]},
+ {id:"p6", short:"Fase 6 Produksi & keamanan", name:"Fase 6 · Produksi, infra, dan keamanan", when:"Bulan 20–30", start:20, end:30, kind:"crit",
+  goal:"Bisa dipasang di lingkungan klien dan lolos pertanyaan keamanan pertama.",
+  gate:"Demo di mesin bersih: satu perintah, data dummy korporat, audit log jalan, percobaan injection tertangkap.",
+  tasks:[
+   ["W","Serving dengan vLLM atau llama.cpp server: batching, konkurensi, timeout",""],
+   ["W","Paket on-prem: docker compose satu perintah di mesin baru",""],
+   ["W","Observability: log terstruktur, trace tiap pertanyaan, dashboard Prometheus/Grafana",""],
+   ["W","Guardrail SQL: user read-only, tolak DDL/DML, batas baris dan waktu",""],
+   ["W","Pertahanan prompt injection lewat isi data","Sel tabel bisa berisi instruksi jahat. Uji dengan data yang sengaja diracuni."],
+   ["W","Audit log: siapa bertanya apa, SQL apa yang jalan",""],
+   ["W","RBAC dan isolasi data antar klien (multi-tenant)",""],
+   ["W","Manajemen secret dan hardening Linux/container dasar",""],
+   ["P","Pelajari dasar UU PDP dan gambaran SOC 2 / ISO 27001","Bukan untuk sertifikasi sekarang, tapi supaya bisa menjawab kuesioner keamanan calon klien."],
+   ["O","Kubernetes dasar","Baru kalau klien memintanya. Docker Compose cukup untuk pilot pertama."],
+   ["O","Satu cloud (AWS atau GCP) dan Terraform",""],
+   ["O","Lab purple team kecil untuk menyerang dan mendeteksi sistemmu sendiri","Di sinilah dua laptop penyerang/korban tadi baru terpakai."]
+  ]},
+ {id:"p7", short:"Fase 7 Pasar & pilot", name:"Fase 7 · Pasar dan pilot", when:"Ringan dari bulan 6, intensif bulan 24–36", start:6, end:36, kind:"par",
+  goal:"Validasi bahwa ada yang mau membayar sebelum menghabiskan lebih banyak bulan membangun.",
+  gate:"Ada pilot berbayar, atau surat niat (LOI), dari minimal satu perusahaan.",
+  tasks:[
+   ["W","Daftar 30 orang target: analis data, kepala BI, dan konsultan analitik di perusahaan menengah",""],
+   ["W","10 wawancara masalah pertama (jangan menjual). Selesaikan sebelum bulan 12","Tanya: bagaimana sekarang mereka menjawab pertanyaan data, berapa lama, dan siapa yang membayar?"],
+   ["W","Peta pesaing: Copilot di Power BI, Snowflake Cortex Analyst, Databricks Genie, ThoughtSpot, dan ChatGPT langsung","Jawab: kenapa klien memilih kamu? Kalau jawabannya cuma “lebih murah”, itu lemah. Kandidat: data tidak keluar, biaya terprediksi, bukti terukur per tugas."],
+   ["W","Capai total 20–30 wawancara",""],
+   ["W","Cari 1–3 design partner untuk pilot gratis atau murah",""],
+   ["W","Jalankan pilot 4–8 minggu dengan metrik sukses tertulis sejak awal",""],
+   ["W","Model harga dan unit economics: per kursi, per query, atau lisensi on-prem","Hitung biaya GPU per jawaban."],
+   ["P","Bangun jejak publik: hasil benchmark, tulisan teknis, demo",""],
+   ["O","Legal dasar: NDA, kontrak pilot, entitas usaha",""],
+   ["O","Pitch deck dan daftar program startup atau kredit cloud",""]
+  ]},
+ {id:"px", short:"Jalur paralel", name:"Jalur paralel · sepanjang jalan", when:"Bulan 0–36", start:0, end:36, kind:"par",
+  goal:"Hal-hal yang tidak punya garis akhir tapi menentukan apakah kamu bertahan tiga tahun.",
+  gate:"",
+  tasks:[
+   ["P","Sisihkan tabungan tetap tiap bulan untuk kuliah","Tetapkan angka target dan tanggalnya."],
+   ["P","Cari kerja lepas kecil di data atau otomasi (analisis, dashboard, script)","Menghasilkan uang dan menjadi sumber masalah nyata dari klien sungguhan."],
+   ["P","Review mingguan 30 menit: apa selesai, apa macet, apa berikutnya",""],
+   ["P","Review bulanan: apakah asumsi utama masih benar? (harga frontier, kemampuan SLM, pesaing)","Asumsi bisnismu bergantung pada tren yang bergerak cepat. Cek terus."],
+   ["P","Simpan semua eksperimen di repo dengan hasil yang bisa diulang",""],
+   ["O","Ikut komunitas ML/data Indonesia dan datang ke meetup",""],
+   ["O","Ikut kompetisi Kaggle atau hackathon",""]
+  ]}
+];
+
+var PHASES = RAW.map(function(ph){
+  return {
+    id:ph.id, short:ph.short, name:ph.name, when:ph.when, start:ph.start, end:ph.end, kind:ph.kind,
+    goal:ph.goal, gate:ph.gate, gateId: ph.gate ? ph.id+"-gate" : null,
+    tasks: ph.tasks.map(function(t,i){
+      return {id:ph.id+"-"+(i+1), tag:t[0], title:t[1], note:t[2]||"", ph:ph.id};
+    })
+  };
+});
+var BY_ID = {};
+PHASES.forEach(function(p){BY_ID[p.id]=p;});
+var VALID = {};
+PHASES.forEach(function(p){ p.tasks.forEach(function(t){VALID[t.id]=1;}); if(p.gateId) VALID[p.gateId]=1; });
+var SEQ = ["p0","p1","p2","p3","p4","p5","p6"];
+
+/* ---------- Jalur Agency: TERPISAH TOTAL dari 87 tugas ML di atas ---------- */
+var AGENCY_RAW = [
+ {id:"ag1", short:"Agency F1 Infrastruktur", name:"Agency Fase 1 · Infrastruktur dasar", when:"~2-3 minggu kalender di ritme 4 jam/minggu (didesain awal 1 minggu di jam lebih tinggi)",
+  goal:"Infra dasar siap: repo, domain, hosting report, glossary pribadi.",
+  gate:"", tasks:[
+   ["W","Setup Git + GitHub buat project yang udah ada (jangan nuke data lama)","Pertahanan utama dari 'project collapse' kemarin. Commit tiap ada progres kecil yang jalan, jangan nunggu akhir hari."],
+   ["W","Beli domain baru khusus outreach + setup SPF/DKIM/DMARC","Ambil paket 1 tahun dulu, bukan 4 tahun — gak perlu komitmen jangka panjang di awal saat budget masih ketat buat tabungan kuliah. Yang wajib bukan durasinya, tapi SPF/DKIM/DMARC-nya nyala biar gak masuk folder spam kayak kegagalan sebelumnya. Domain ini terpisah dari email pribadi lo."],
+   ["W","Setup Vercel/Netlify buat hosting report","Gratis di tier awal. Report butuh link yang bisa dibuka orang lain, gak cukup cuma nongkrong di laptop lo."],
+   ["W","Buat notes.md sebagai glossary pribadi istilah baru","Sekali nemu istilah asing (SPF, ICP, dsb), catet di sini. Juga jadi bukti belajar buat portofolio nanti."]
+  ]},
+ {id:"ag2", short:"Agency F2 Modularisasi", name:"Agency Fase 2 · Pecah pipeline jadi modul", when:"~2-3 minggu kalender",
+  goal:"Pipeline gak lagi satu file raksasa, biar AI coding tool gak ngaco kayak kegagalan sebelumnya.",
+  gate:"", tasks:[
+   ["W","Split project jadi spec terpisah: scraper.md, audit.md, render.md","Kegagalan sebelumnya karena satu file besar bikin AI coding tool bingung. Tiap spec fokus satu tanggung jawab: scraper cuma ngambil data, audit cuma nilai, render cuma nampilin."],
+   ["W","Tambah step screenshot (Crawl4AI/Playwright) + 1x vision call per prospek","Ini jawaban buat masalah 'LLM cuma baca teks mentah, gak liat tampilan asli'. Screenshot dulu, baru panggil model vision, gabung sama hasil teks."],
+   ["W","Render JSON ke HTML report (templating, tanpa biaya LLM di step ini)","Murni templating HTML/CSS biasa, gak panggil LLM lagi. Bagian paling gampang buat AI coding tool eksekusi."],
+   ["W","Tambah logging di tiap tahap pipeline","Biar tau macet di step mana tanpa harus ngerti kode."]
+  ]},
+ {id:"ag3", short:"Agency F3 QC & warm-up", name:"Agency Fase 3 · QC dan warm-up email", when:"~2-3 minggu kalender",
+  goal:"Yakin hasil audit masuk akal sebelum dikirim ke siapa pun, dan domain outreach udah dipanaskan.",
+  gate:"", tasks:[
+   ["W","Jalanin ke 2-3 prospek dummy, cek manual pakai checklist CRO (CTA, load speed, mobile-friendly, trust signal, copy benefit)","Ini QC manual lo sebelum percaya hasil LLM. 5 menit per prospek, gak perlu jadi expert dulu."],
+   ["W","Mulai warm-up email domain baru, volume kecil dulu","Domain baru langsung kirim banyak email = ditandai spam. Mulai beberapa email per hari, naik pelan-pelan."],
+   ["W","Setup tracker leads di Sheets/Airtable","Gak perlu CRM berat. Satu sheet: siapa udah dikontak, kapan, statusnya apa."]
+  ]},
+ {id:"ag4", short:"Agency F4 Outreach", name:"Agency Fase 4 · Filter ICP dan mulai outreach", when:"~2-4 minggu kalender, lanjut terus setelahnya",
+  goal:"Outreach pertama keluar ke prospek yang beneran cocok, bukan leads random.",
+  gate:"", tasks:[
+   ["W","Filter leads: self-hosted/WordPress, niche spesifik (plumbing/HVAC/roofing), exclude platform besar","Kegagalan sebelumnya karena leads random dari Apollo. Yang udah pakai Shopify dkk biasanya udah punya tim/solusi sendiri, gak butuh audit lo."],
+   ["W","Kirim outreach volume kecil, pantau reply rate","Kirim ke 10-20 dulu, lihat reply rate-nya, baru naikin. Jangan langsung nembak ratusan."],
+   ["W","Begitu ada yang tertarik ke fix service, broker ke freelancer, ambil margin","Di sinilah revenue asli masuk. Lo ambil margin, gak perlu jadi tukang eksekusi fix sendiri."]
+  ]},
+ {id:"ageval", short:"Evaluasi 8-10 minggu", name:"Titik evaluasi · 8-10 minggu sejak outreach pertama", when:"Dihitung sejak outreach mulai jalan, bukan sejak hari 1 project",
+  goal:"Cek jujur: worth dilanjutin apa adanya, atau perlu diubah.",
+  gate:"Sudah tinjau tiga pilihan dan mengambil keputusan sadar: (1) Lanjut apa adanya, ada sinyal positif (reply rate, minat fix service). (2) Ubah ICP/niche karena reply rate rendah. (3) Kurangi jam agency, alihkan ke ML karena sinyalnya tidak sepadan dengan jam yang masuk.",
+  tasks:[]}
+];
+var AGENCY_PHASES = AGENCY_RAW.map(function(ph){
+  return {
+    id:ph.id, short:ph.short, name:ph.name, when:ph.when,
+    goal:ph.goal, gate:ph.gate, gateId: ph.gate ? ph.id+"-gate" : null,
+    tasks: ph.tasks.map(function(t,i){
+      return {id:ph.id+"-"+(i+1), tag:t[0], title:t[1], note:t[2]||"", ph:ph.id};
+    })
+  };
+});
+AGENCY_PHASES.forEach(function(p){ p.tasks.forEach(function(t){VALID[t.id]=1;}); if(p.gateId) VALID[p.gateId]=1; });
+
+/* ---------- State ---------- */
+var storageOK = true;
+function todayISO(){
+  var d=new Date(); function z(n){return String(n).padStart(2,"0");}
+  return d.getFullYear()+"-"+z(d.getMonth()+1)+"-"+z(d.getDate());
+}
+function load(){
+  try{
+    var raw = localStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ storageOK=false; return null; }
+}
+function save(){
+  try{
+    localStorage.setItem(KEY, JSON.stringify({v:1, done:state.done, start:state.start, hideDone:state.hideDone}));
+  }catch(e){ storageOK=false; }
+}
+var saved = load() || {};
+var state = {
+  done: (saved.done && typeof saved.done==="object") ? saved.done : {},
+  start: (typeof saved.start==="string" && /^\d{4}-\d{2}-\d{2}$/.test(saved.start)) ? saved.start : todayISO(),
+  hideDone: !!saved.hideDone,
+  tags: {W:true,P:true,O:true}
+};
+var openSet = {};
+var resetArmed = false, resetTimer = null;
+if(!saved.start) save();
+
+/* ---------- Helpers ---------- */
+function counts(ph){
+  var n=0; ph.tasks.forEach(function(t){ if(state.done[t.id]) n++; });
+  return {n:n, m:ph.tasks.length};
+}
+function totals(){
+  var n=0,m=0,wn=0,wm=0,gn=0,gm=0;
+  PHASES.forEach(function(p){
+    p.tasks.forEach(function(t){ m++; if(state.done[t.id]) n++; if(t.tag==="W"){wm++; if(state.done[t.id]) wn++;} });
+    if(p.gateId){ gm++; if(state.done[p.gateId]) gn++; }
+  });
+  return {n:n,m:m,wn:wn,wm:wm,gn:gn,gm:gm};
+}
+function currentPhase(){
+  for(var i=0;i<PHASES.length;i++){
+    var p=PHASES[i]; if(p.gateId && !state.done[p.gateId]) return p;
+  }
+  return null;
+}
+function elapsedMonths(){
+  var t = new Date(state.start+"T00:00:00").getTime();
+  if(isNaN(t)) return 0;
+  return Math.max(0,(Date.now()-t)/(1000*60*60*24*30.44));
+}
+function fmt1(x){ return (Math.round(x*10)/10).toString().replace(".",","); }
+function tagHTML(t){ var g=TAGS[t]; return '<span class="tag '+g.cls+'">'+g.label+'</span>'; }
+
+function taskHTML(t, ctx, from){
+  var d = !!state.done[t.id];
+  return '<li class="task'+(d?' done':'')+'"><label><input type="checkbox" data-tid="'+t.id+'" data-ctx="'+ctx+'"'+(d?' checked':'')+'>'+
+    '<span class="tt"><span class="title">'+t.title+'</span>'+
+    (t.note?'<span class="note">'+t.note+'</span>':'')+
+    (from?'<span class="from">Dari '+from+'</span>':'')+
+    '</span></label>'+tagHTML(t.tag)+'</li>';
+}
+
+/* ---------- Render pieces ---------- */
+function summaryHTML(){
+  var s=totals(), pct = s.m? Math.round(s.n/s.m*100):0;
+  var cur=currentPhase();
+  var months=elapsedMonths();
+  var pace="";
+  if(!cur){
+    pace="Semua pintu fase sudah lulus.";
+  }else{
+    var exp=SEQ.length-1;
+    for(var i=0;i<SEQ.length;i++){ if(BY_ID[SEQ[i]].end>months){exp=i;break;} }
+    var actual=SEQ.indexOf(cur.id); if(actual<0) actual=SEQ.length-1;
+    if(actual<exp){
+      pace="Menurut jadwal kamu seharusnya sudah di "+BY_ID[SEQ[exp]].short+", sedangkan sekarang di "+cur.short+". Wajar. Geser tanggal mulai atau persempit lingkup fase.";
+    }else{
+      pace="Sesuai atau lebih cepat dari jadwal. Fase aktif: "+cur.short+".";
+    }
+  }
+  return '<div class="meter big" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="Progres keseluruhan"><i style="width:'+pct+'%"></i></div>'+
+    '<p class="sumtext"><b>'+s.n+' dari '+s.m+' tugas</b> selesai. Wajib '+s.wn+'/'+s.wm+'. Pintu fase lulus '+s.gn+'/'+s.gm+'.</p>'+
+    '<div class="startrow"><label>Tanggal mulai <input type="date" id="start-date" value="'+state.start+'"></label>'+
+    '<span>Bulan ke-'+fmt1(months)+' dari '+TOTAL_MONTHS+'</span></div>'+
+    '<p class="pace sumtext" style="font-size:.9rem;color:var(--muted)">'+pace+'</p>';
+}
+
+function timelineHTML(){
+  var frac=Math.min(1, elapsedMonths()/TOTAL_MONTHS);
+  var head='<div class="trow thead"><div></div><div class="tbars">'+
+    '<span style="grid-column:1/13">Tahun 1</span><span style="grid-column:13/25">Tahun 2</span><span style="grid-column:25/37">Tahun 3</span></div></div>';
+  var rows=PHASES.map(function(ph){
+    var c=counts(ph), pct=c.m?Math.round(c.n/c.m*100):0;
+    return '<div class="trow"><button class="tlabel" type="button" data-jump="'+ph.id+'"><span class="tname">'+ph.short+'</span><span class="tcount">'+c.n+'/'+c.m+'</span></button>'+
+      '<div class="tbars"><button class="bar '+ph.kind+'" type="button" style="grid-column:'+(ph.start+1)+'/'+(ph.end+1)+'" data-jump="'+ph.id+'" aria-label="'+ph.name+', '+ph.when+', '+pct+' persen selesai"><i style="width:'+pct+'%"></i></button></div></div>';
+  }).join("");
+  var overlay='<div class="overlay" aria-hidden="true"><div class="guide" style="--f:.3333"></div><div class="guide" style="--f:.6667"></div>'+
+    '<div class="now" style="--f:'+frac.toFixed(4)+'"><span>Sekarang</span></div></div>';
+  return head+rows+overlay;
+}
+
+function nextHTML(){
+  var cur=currentPhase();
+  if(!cur) return '<h2>Kerjakan berikutnya</h2><p class="empty">Semua pintu fase sudah lulus. Waktunya menjalankan pilot dan menghitung ulang asumsi.</p>';
+  var must=cur.tasks.filter(function(t){return t.tag==="W" && !state.done[t.id];}).slice(0,3);
+  var mustHTML;
+  if(must.length){
+    mustHTML=must.map(function(t){return taskHTML(t,"next");}).join("");
+  }else{
+    mustHTML='<li class="task"><label><input type="checkbox" data-tid="'+cur.gateId+'" data-ctx="next"><span class="tt"><span class="title">Semua tugas wajib fase ini selesai. Uji pintu keluarnya</span><span class="note">'+cur.gate+'</span></span></label><span class="tag w">Pintu</span></li>';
+  }
+  var par=[];
+  cur.tasks.forEach(function(t){ if(t.tag==="P" && !state.done[t.id]) par.push({t:t,from:""}); });
+  BY_ID.px.tasks.forEach(function(t){ if(t.tag==="P" && !state.done[t.id]) par.push({t:t,from:"Jalur paralel"}); });
+  var m=elapsedMonths();
+  var idx=SEQ.indexOf(cur.id);
+  if(m>=6 || idx>=2){
+    var pm=BY_ID.p7.tasks.filter(function(t){return t.tag==="W" && !state.done[t.id];})[0];
+    if(pm) par.unshift({t:pm,from:"Fase 7 Pasar & pilot"});
+  }
+  par=par.slice(0,3);
+  var parHTML=par.length? par.map(function(x){return taskHTML(x.t,"next",x.from);}).join("") : '<li class="empty">Tidak ada tugas paralel yang tersisa.</li>';
+  return '<h2>Kerjakan berikutnya</h2><span class="from">'+cur.name+', '+cur.when+'</span>'+
+    '<div class="next-grid"><div><h3>Jalur kritis</h3><ul class="tasks">'+mustHTML+'</ul></div>'+
+    '<div><h3>Bisa jalan bersamaan</h3><ul class="tasks">'+parHTML+'</ul></div></div>';
+}
+
+function filtersHTML(){
+  var cnt={W:0,P:0,O:0};
+  PHASES.forEach(function(p){p.tasks.forEach(function(t){ if(!state.done[t.id]) cnt[t.tag]++; });});
+  var chips=["W","P","O"].map(function(k){
+    return '<button type="button" class="chip" data-tagf="'+k+'" aria-pressed="'+(state.tags[k]?'true':'false')+'">'+TAGS[k].label+' ('+cnt[k]+' tersisa)</button>';
+  }).join("");
+  return chips+'<label class="hide-done"><input type="checkbox" id="hide-done"'+(state.hideDone?' checked':'')+'> Sembunyikan yang selesai</label>';
+}
+
+function phasesHTML(){
+  var cur=currentPhase();
+  return PHASES.map(function(ph){
+    var c=counts(ph), pct=c.m?Math.round(c.n/c.m*100):0;
+    var isCur=cur && cur.id===ph.id;
+    var vis=ph.tasks.filter(function(t){ return state.tags[t.tag] && !(state.hideDone && state.done[t.id]); });
+    var list=vis.length? '<ul class="tasks">'+vis.map(function(t){return taskHTML(t,"phase");}).join("")+'</ul>' : '<p class="empty">Tidak ada tugas yang cocok dengan filter.</p>';
+    var gate="";
+    if(ph.gateId){
+      var gd=!!state.done[ph.gateId];
+      gate='<label class="gate'+(gd?' done':'')+'"><input type="checkbox" data-tid="'+ph.gateId+'" data-ctx="phase"'+(gd?' checked':'')+'><span><b>Pintu keluar fase</b>'+ph.gate+'</span></label>';
+    }
+    return '<section class="phase'+(isCur?' current':'')+'" id="ph-'+ph.id+'"><details data-ph="'+ph.id+'"'+(openSet[ph.id]?' open':'')+'>'+
+      '<summary><span class="ph-title"><span><b>'+ph.name+(isCur?'<span class="badge">Aktif</span>':'')+'</b><span class="ph-when">'+ph.when+'</span></span></span>'+
+      '<span class="ph-prog"><span class="meter" aria-hidden="true"><i style="width:'+pct+'%"></i></span>'+c.n+'/'+c.m+'</span></summary>'+
+      '<div class="body"><p class="goal">'+ph.goal+'</p>'+list+gate+'</div></details></section>';
+  }).join("");
+}
+
+function agencyTotals(){
+  var n=0,m=0; AGENCY_PHASES.forEach(function(p){ p.tasks.forEach(function(t){ m++; if(state.done[t.id]) n++; }); });
+  return {n:n,m:m};
+}
+function agencySummaryHTML(){
+  var s=agencyTotals(), pct=s.m?Math.round(s.n/s.m*100):0;
+  var evalDone=!!state.done["ageval-gate"];
+  return '<div class="meter big" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="Progres jalur agency"><i style="width:'+pct+'%"></i></div>'+
+    '<p class="sumtext"><b>'+s.n+' dari '+s.m+' tugas agency</b> selesai. Titik evaluasi 8-10 minggu: '+(evalDone?'sudah dilakukan.':'belum.')+'</p>';
+}
+function agencyPhasesHTML(){
+  return AGENCY_PHASES.map(function(ph){
+    var c=counts(ph), pct=c.m?Math.round(c.n/c.m*100):0;
+    var list=ph.tasks.length?'<ul class="tasks">'+ph.tasks.map(function(t){return taskHTML(t,"agency");}).join("")+'</ul>':'';
+    var gate="";
+    if(ph.gateId){
+      var gd=!!state.done[ph.gateId];
+      gate='<label class="gate'+(gd?' done':'')+'"><input type="checkbox" data-tid="'+ph.gateId+'" data-ctx="agency"'+(gd?' checked':'')+'><span><b>Keputusan evaluasi</b>'+ph.gate+'</span></label>';
+    }
+    return '<section class="phase" id="ag-'+ph.id+'"><details data-ph="'+ph.id+'"'+(openSet[ph.id]?' open':'')+'>'+
+      '<summary><span class="ph-title"><span><b>'+ph.name+'</b><span class="ph-when">'+ph.when+'</span></span></span>'+
+      (c.m?'<span class="ph-prog"><span class="meter" aria-hidden="true"><i style="width:'+pct+'%"></i></span>'+c.n+'/'+c.m+'</span>':'')+'</summary>'+
+      '<div class="body"><p class="goal">'+ph.goal+'</p>'+list+gate+'</div></details></section>';
+  }).join("");
+}
+function render(){
+  var a=document.activeElement, key=null;
+  if(a && a.dataset && a.dataset.tid) key=a.dataset.tid+"|"+(a.dataset.ctx||"");
+  var sd = a && a.id==="start-date";
+  document.getElementById("summary").innerHTML=summaryHTML();
+  document.getElementById("timeline").innerHTML=timelineHTML();
+  document.getElementById("next").innerHTML=nextHTML();
+  document.getElementById("filters").innerHTML=filtersHTML();
+  document.getElementById("phases").innerHTML=phasesHTML();
+  document.getElementById("agency-summary").innerHTML=agencySummaryHTML();
+  document.getElementById("agency-phases").innerHTML=agencyPhasesHTML();
+  document.getElementById("storage-warn").hidden=storageOK;
+  if(key){
+    var p=key.split("|");
+    var el=document.querySelector('[data-tid="'+p[0]+'"][data-ctx="'+p[1]+'"]');
+    if(el) el.focus();
+  }else if(sd){
+    var s=document.getElementById("start-date"); if(s) s.focus();
+  }
+}
+
+/* ---------- Events ---------- */
+document.addEventListener("change",function(e){
+  var t=e.target;
+  if(t.dataset && t.dataset.tid){
+    if(t.checked) state.done[t.dataset.tid]=true; else delete state.done[t.dataset.tid];
+    save(); render(); return;
+  }
+  if(t.id==="hide-done"){ state.hideDone=t.checked; save(); render(); return; }
+  if(t.id==="start-date"){
+    if(/^\d{4}-\d{2}-\d{2}$/.test(t.value)){ state.start=t.value; save(); render(); }
+  }
+});
+document.addEventListener("click",function(e){
+  var el=e.target.closest("[data-jump],[data-tagf]");
+  if(!el) return;
+  if(el.dataset.tagf){
+    state.tags[el.dataset.tagf]=!state.tags[el.dataset.tagf]; render(); return;
+  }
+  var id=el.dataset.jump; openSet[id]=true; render();
+  var target=document.getElementById("ph-"+id);
+  if(target) target.scrollIntoView({block:"start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto":"smooth"});
+});
+document.addEventListener("toggle",function(e){
+  var d=e.target;
+  if(d && d.matches && d.matches("details[data-ph]")){
+    if(d.open) openSet[d.dataset.ph]=true; else delete openSet[d.dataset.ph];
+  }
+},true);
+
+/* ---------- Export / import / reset ---------- */
+var dlg=document.getElementById("dlg"), dt=document.getElementById("dlg-text"), dm=document.getElementById("dlg-msg");
+var mode="export";
+function openDlg(m){
+  mode=m; dm.textContent="";
+  document.getElementById("dlg-title").textContent = m==="export" ? "Ekspor progres" : "Impor progres";
+  document.getElementById("dlg-help").textContent = m==="export"
+    ? "Salin teks ini dan simpan di catatanmu. Tempel lewat Impor progres untuk memulihkannya di browser lain."
+    : "Tempel teks hasil ekspor di kotak ini, lalu klik Terapkan. Progres saat ini akan diganti.";
+  document.getElementById("dlg-copy").hidden = m!=="export";
+  document.getElementById("dlg-apply").hidden = m!=="import";
+  dt.readOnly = m==="export";
+  dt.value = m==="export" ? JSON.stringify({v:1,done:state.done,start:state.start,hideDone:state.hideDone}) : "";
+  if(typeof dlg.showModal==="function") dlg.showModal(); else dlg.setAttribute("open","");
+  dt.focus(); if(m==="export") dt.select();
+}
+document.getElementById("btn-export").addEventListener("click",function(){openDlg("export");});
+document.getElementById("btn-import").addEventListener("click",function(){openDlg("import");});
+document.getElementById("dlg-close").addEventListener("click",function(){ if(dlg.close) dlg.close(); else dlg.removeAttribute("open"); });
+document.getElementById("dlg-copy").addEventListener("click",function(){
+  dt.focus(); dt.select();
+  var ok=false;
+  try{ ok=document.execCommand("copy"); }catch(err){}
+  if(!ok && navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(dt.value).then(function(){dm.textContent="Sudah disalin.";},function(){dm.textContent="Tidak bisa menyalin otomatis. Teks sudah terpilih, salin dengan Ctrl+C.";});
+    return;
+  }
+  dm.textContent = ok ? "Sudah disalin." : "Tidak bisa menyalin otomatis. Teks sudah terpilih, salin dengan Ctrl+C.";
+});
+document.getElementById("dlg-apply").addEventListener("click",function(){
+  var data;
+  try{ data=JSON.parse(dt.value); }catch(err){ dm.textContent="Teks bukan JSON yang valid. Salin ulang dari hasil ekspor."; return; }
+  if(!data || typeof data!=="object" || !data.done || typeof data.done!=="object"){ dm.textContent="Format tidak dikenali."; return; }
+  var nd={}; Object.keys(data.done).forEach(function(k){ if(VALID[k] && data.done[k]===true) nd[k]=true; });
+  state.done=nd;
+  if(typeof data.start==="string" && /^\d{4}-\d{2}-\d{2}$/.test(data.start)) state.start=data.start;
+  state.hideDone=!!data.hideDone;
+  save(); render();
+  dm.textContent="Progres diterapkan: "+Object.keys(nd).length+" item.";
+});
+var rb=document.getElementById("btn-reset");
+rb.addEventListener("click",function(){
+  if(!resetArmed){
+    resetArmed=true; rb.textContent="Klik lagi untuk menghapus semua progres"; rb.classList.add("armed");
+    resetTimer=setTimeout(function(){resetArmed=false; rb.textContent="Reset semua"; rb.classList.remove("armed");},4000);
+    return;
+  }
+  clearTimeout(resetTimer); resetArmed=false; rb.textContent="Reset semua"; rb.classList.remove("armed");
+  state.done={}; state.start=todayISO(); save(); render();
+});
+
+/* ---------- Init ---------- */
+var cur0=currentPhase(); if(cur0) openSet[cur0.id]=true;
+render();
+})();
+</script>
+</body>
+</html>
