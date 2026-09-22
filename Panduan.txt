@@ -8,6 +8,7 @@ git remote -v = check alias repo
 git branch <namabranch> = add branch
 git branch = check branch
 git switch <namabranch> = switch branch
+git switch -c <namabranch? = add branch + switch
 
 git push <namarepo> <branch> = push ke alias repo dan ke branch (Contoh: git push origin main)
 
