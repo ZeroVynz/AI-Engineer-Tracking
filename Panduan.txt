@@ -1,0 +1,15 @@
+git add . = add semua file di dalam folder termasuk foldernya
+git add <namafile> = add namafile
+git commit -m "message" = menyimpan commit
+
+git remote add <namarepo> <urlrepo> = menambahkan alias repo (biasanya origin)
+git remote -v = check alias repo
+
+git branch <namabranch> = add branch
+git branch = check branch
+git switch <namabranch> = switch branch
+
+git push <namarepo> <branch> = push ke alias repo dan ke branch (Contoh: git push origin main)
+
+
+tips pakai suffix --cached hanya hapus di repo gh, bukan local
