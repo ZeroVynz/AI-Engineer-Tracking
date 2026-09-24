@@ -14,3 +14,5 @@ git push <namarepo> <branch> = push ke alias repo dan ke branch (Contoh: git pus
 
 
 tips pakai suffix --cached hanya hapus di repo gh, bukan local
+
+sumber belajar OOP baru = realpython.com
