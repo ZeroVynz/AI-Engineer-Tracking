@@ -1,17 +1,17 @@
 import sys
-import ollama
-from ollama import chat
+import requests
 
-# Memastikan console Windows bisa menampilkan emoji/karakter Unicode tanpa crash
 sys.stdout.reconfigure(encoding='utf-8')
 
+prompt = input("Masukkan Teks Untuk Input: ")
 
-messages = [
-    {
-        "role": "user",
-        "content": input("Masukkan Teks Untuk Input: "),
-    },
-]
+resp = requests.post(
+    "http://localhost:11434/api/chat",
+    json={
+        "model": "openbmb/MiniCPM5-2B:latest",
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": False
+    }
+)
 
-response = chat(model="openbmb/MiniCPM5-2B:latest", messages=messages)
-print(response.message.content)
+print(resp.json()["message"]["content"])
