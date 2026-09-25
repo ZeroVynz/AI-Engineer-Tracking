@@ -156,13 +156,14 @@ dialog textarea{width:100%;background:var(--bg);border:1px solid var(--line);bor
   <div id="agency-phases"></div>
 
   <div class="tools">
-    <span>Progres tersimpan di browser ini.</span>
+    <span id="fs-status">Progres tersimpan di browser ini.</span>
+    <button class="btn" id="btn-connect" type="button" hidden>Sambungkan progress.json</button>
     <button class="btn" id="btn-export" type="button">Ekspor progres</button>
     <button class="btn" id="btn-import" type="button">Impor progres</button>
     <button class="btn danger" id="btn-reset" type="button">Reset semua</button>
   </div>
   <p class="warn" id="storage-warn" hidden>Browser ini memblokir penyimpanan, jadi progres hilang saat halaman ditutup. Pakai Ekspor progres untuk menyimpannya.</p>
-  <p class="lede" style="margin:.75rem 0 0;font-size:.85rem">Tip: browser sudah otomatis menyimpan tiap centang (localStorage), jadi tidak akan mengulang kerjaan hanya karena reload. Tapi biar ada riwayat progres yang ikut ke-commit, sekali seminggu klik <b>Ekspor progres</b>, tempel hasilnya ke file <code>progress.json</code> di repo, lalu commit bareng review mingguanmu.</p>
+  <p class="lede" id="fs-hint" style="margin:.75rem 0 0;font-size:.85rem">Tip: browser sudah otomatis menyimpan tiap centang (localStorage). Klik <b>Sambungkan progress.json</b> sekali dan pilih/​buat file <code>progress.json</code> di folder repo kamu — abis itu tiap centang otomatis ke-tulis ke file itu langsung, tinggal <code>git commit</code> kapan pun. Kalau tombolnya nggak muncul, browser kamu belum dukung; pakai Ekspor/Impor manual di bawah.</p>
 </div>
 
 <dialog id="dlg">
@@ -436,6 +437,7 @@ function save(){
   try{
     localStorage.setItem(KEY, JSON.stringify({v:1, done:state.done, start:state.start, hideDone:state.hideDone}));
   }catch(e){ storageOK=false; }
+  if(typeof fileHandle !== "undefined" && fileHandle) writeLinkedFile();
 }
 var saved = load() || {};
 var state = {
@@ -651,6 +653,130 @@ document.addEventListener("toggle",function(e){
     if(d.open) openSet[d.dataset.ph]=true; else delete openSet[d.dataset.ph];
   }
 },true);
+
+/* ---------- File System Access: auto-sync progress.json ---------- */
+var FS_SUPPORTED = typeof window.showOpenFilePicker === "function" && typeof window.showSaveFilePicker === "function";
+var DB_NAME = "mlroadmap-fs", DB_STORE = "handles", DB_KEY = "progress-file";
+var fileHandle = null, fsPending = false, fsQueued = false;
+
+function idbOpen(){
+  return new Promise(function(resolve, reject){
+    var req = indexedDB.open(DB_NAME, 1);
+    req.onupgradeneeded = function(){ req.result.createObjectStore(DB_STORE); };
+    req.onsuccess = function(){ resolve(req.result); };
+    req.onerror = function(){ reject(req.error); };
+  });
+}
+function idbGet(key){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(DB_STORE, "readonly");
+      var r = tx.objectStore(DB_STORE).get(key);
+      r.onsuccess = function(){ resolve(r.result || null); };
+      r.onerror = function(){ reject(r.error); };
+    });
+  }).catch(function(){ return null; });
+}
+function idbSet(key, val){
+  return idbOpen().then(function(db){
+    return new Promise(function(resolve, reject){
+      var tx = db.transaction(DB_STORE, "readwrite");
+      tx.objectStore(DB_STORE).put(val, key);
+      tx.oncomplete = function(){ resolve(); };
+      tx.onerror = function(){ reject(tx.error); };
+    });
+  }).catch(function(){});
+}
+function setFsStatus(text){
+  var el = document.getElementById("fs-status");
+  if(el) el.textContent = text;
+}
+function exportPayload(){
+  return JSON.stringify({v:1, done:state.done, start:state.start, hideDone:state.hideDone}, null, 2);
+}
+async function verifyPermission(handle, readWrite){
+  var opts = readWrite ? {mode:"readwrite"} : {};
+  if((await handle.queryPermission(opts)) === "granted") return true;
+  if((await handle.requestPermission(opts)) === "granted") return true;
+  return false;
+}
+async function writeLinkedFile(){
+  if(!fileHandle) return;
+  if(fsPending){ fsQueued = true; return; }
+  fsPending = true;
+  try{
+    var ok = await verifyPermission(fileHandle, true);
+    if(!ok){ setFsStatus("Izin ke progress.json dicabut. Klik Sambungkan lagi."); fileHandle=null; return; }
+    var w = await fileHandle.createWritable();
+    await w.write(exportPayload());
+    await w.close();
+    setFsStatus("Tersambung ke "+fileHandle.name+" — otomatis tersimpan.");
+  }catch(err){
+    setFsStatus("Gagal nulis ke "+(fileHandle?fileHandle.name:"file")+": "+(err&&err.message?err.message:"error"));
+  }finally{
+    fsPending = false;
+    if(fsQueued){ fsQueued = false; writeLinkedFile(); }
+  }
+}
+async function connectFile(){
+  try{
+    var handle;
+    try{
+      var picked = await window.showOpenFilePicker({
+        types:[{description:"progress.json", accept:{"application/json":[".json"]}}],
+        excludeAcceptAllOption:false, multiple:false
+      });
+      handle = picked[0];
+    }catch(err){
+      if(err && err.name === "AbortError") return;
+      throw err;
+    }
+    var ok = await verifyPermission(handle, true);
+    if(!ok){ setFsStatus("Izin ditolak."); return; }
+    var file = await handle.getFile();
+    var text = (await file.text()).trim();
+    if(text){
+      try{
+        var data = JSON.parse(text);
+        if(data && typeof data==="object" && data.done && typeof data.done==="object"){
+          var nd={}; Object.keys(data.done).forEach(function(k){ if(VALID[k] && data.done[k]===true) nd[k]=true; });
+          state.done = nd;
+          if(typeof data.start==="string" && /^\d{4}-\d{2}-\d{2}$/.test(data.start)) state.start = data.start;
+          state.hideDone = !!data.hideDone;
+          save();
+        }
+      }catch(e){ /* file kosong / bukan JSON valid, biarin, nanti ketimpa write pertama */ }
+    }
+    fileHandle = handle;
+    await idbSet(DB_KEY, handle);
+    setFsStatus("Tersambung ke "+handle.name+" — otomatis tersimpan.");
+    render();
+    await writeLinkedFile();
+  }catch(err){
+    setFsStatus("Gagal menyambungkan: "+(err&&err.message?err.message:"error"));
+  }
+}
+async function tryReconnect(){
+  if(!FS_SUPPORTED) return;
+  var handle = await idbGet(DB_KEY);
+  if(!handle) return;
+  try{
+    var granted = (await handle.queryPermission({mode:"readwrite"})) === "granted";
+    if(granted){
+      fileHandle = handle;
+      setFsStatus("Tersambung ke "+handle.name+" — otomatis tersimpan.");
+    }else{
+      setFsStatus("Terhubung sebelumnya ke "+handle.name+" — klik Sambungkan progress.json buat izinkan lagi.");
+    }
+  }catch(e){ /* handle basi (file dipindah/dihapus) — abaikan */ }
+}
+if(FS_SUPPORTED){
+  document.getElementById("btn-connect").hidden = false;
+  document.getElementById("btn-connect").addEventListener("click", connectFile);
+  tryReconnect();
+}else{
+  document.getElementById("fs-hint").textContent = "Tip: browser ini tidak mendukung penyambungan file otomatis (fitur ini butuh Chrome atau Edge). Progres tetap tersimpan di browser ini (localStorage); sekali seminggu klik Ekspor progres, tempel ke progress.json di repo, lalu commit.";
+}
 
 /* ---------- Export / import / reset ---------- */
 var dlg=document.getElementById("dlg"), dt=document.getElementById("dlg-text"), dm=document.getElementById("dlg-msg");
