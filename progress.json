@@ -1,0 +1,12 @@
+{
+  "v": 1,
+  "done": {
+    "p0-1": true,
+    "p0-2": true,
+    "p0-3": true,
+    "p0-4": true,
+    "p0-7": true
+  },
+  "start": "2026-09-25",
+  "hideDone": false
+}
