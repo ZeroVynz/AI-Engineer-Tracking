@@ -7,7 +7,8 @@
     "p0-4": true,
     "p0-7": true,
     "p0-5": true,
-    "p0-gate": true
+    "p0-gate": true,
+    "p0-6": true
   },
   "start": "2026-09-19",
   "hideDone": false
