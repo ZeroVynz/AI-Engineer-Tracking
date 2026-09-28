@@ -148,13 +148,6 @@ dialog textarea{width:100%;background:var(--bg);border:1px solid var(--line);bor
   <div class="filters" id="filters"></div>
   <div id="phases"></div>
 
-  <section class="card" aria-labelledby="ag-h" style="margin-top:2rem;border-top:3px solid var(--p)">
-    <h2 id="ag-h">Jalur Agency</h2>
-    <p class="lede" style="margin-bottom:.75rem">Terpisah total dari 87 tugas ML di atas — tidak ikut dihitung ke progres ML. Prioritas saat ini: sebagian besar jam mingguan ke sini dulu (funding + praktik), ML jalan ringan di latar belakang. Progres di sini ikut tersimpan lewat Ekspor/Impor progres di bawah.</p>
-    <div id="agency-summary"></div>
-  </section>
-  <div id="agency-phases"></div>
-
   <div class="tools">
     <span id="fs-status">Progres tersimpan di browser ini.</span>
     <button class="btn" id="btn-connect" type="button" hidden>Sambungkan progress.json</button>
@@ -373,54 +366,6 @@ var VALID = {};
 PHASES.forEach(function(p){ p.tasks.forEach(function(t){VALID[t.id]=1;}); if(p.gateId) VALID[p.gateId]=1; });
 var SEQ = ["p0","p1","p2","p3","p4","p5","p6"];
 
-/* ---------- Jalur Agency: TERPISAH TOTAL dari 87 tugas ML di atas ---------- */
-var AGENCY_RAW = [
- {id:"ag1", short:"Agency F1 Infrastruktur", name:"Agency Fase 1 · Infrastruktur dasar", when:"~2-3 minggu kalender di ritme 4 jam/minggu (didesain awal 1 minggu di jam lebih tinggi)",
-  goal:"Infra dasar siap: repo, domain, hosting report, glossary pribadi.",
-  gate:"", tasks:[
-   ["W","Setup Git + GitHub buat project yang udah ada (jangan nuke data lama)","Pertahanan utama dari 'project collapse' kemarin. Commit tiap ada progres kecil yang jalan, jangan nunggu akhir hari."],
-   ["W","Beli domain baru khusus outreach + setup SPF/DKIM/DMARC","Ambil paket 1 tahun dulu, bukan 4 tahun — gak perlu komitmen jangka panjang di awal saat budget masih ketat buat tabungan kuliah. Yang wajib bukan durasinya, tapi SPF/DKIM/DMARC-nya nyala biar gak masuk folder spam kayak kegagalan sebelumnya. Domain ini terpisah dari email pribadi lo."],
-   ["W","Setup Vercel/Netlify buat hosting report","Gratis di tier awal. Report butuh link yang bisa dibuka orang lain, gak cukup cuma nongkrong di laptop lo."],
-   ["W","Buat notes.md sebagai glossary pribadi istilah baru","Sekali nemu istilah asing (SPF, ICP, dsb), catet di sini. Juga jadi bukti belajar buat portofolio nanti."]
-  ]},
- {id:"ag2", short:"Agency F2 Modularisasi", name:"Agency Fase 2 · Pecah pipeline jadi modul", when:"~2-3 minggu kalender",
-  goal:"Pipeline gak lagi satu file raksasa, biar AI coding tool gak ngaco kayak kegagalan sebelumnya.",
-  gate:"", tasks:[
-   ["W","Split project jadi spec terpisah: scraper.md, audit.md, render.md","Kegagalan sebelumnya karena satu file besar bikin AI coding tool bingung. Tiap spec fokus satu tanggung jawab: scraper cuma ngambil data, audit cuma nilai, render cuma nampilin."],
-   ["W","Tambah step screenshot (Crawl4AI/Playwright) + 1x vision call per prospek","Ini jawaban buat masalah 'LLM cuma baca teks mentah, gak liat tampilan asli'. Screenshot dulu, baru panggil model vision, gabung sama hasil teks."],
-   ["W","Render JSON ke HTML report (templating, tanpa biaya LLM di step ini)","Murni templating HTML/CSS biasa, gak panggil LLM lagi. Bagian paling gampang buat AI coding tool eksekusi."],
-   ["W","Tambah logging di tiap tahap pipeline","Biar tau macet di step mana tanpa harus ngerti kode."]
-  ]},
- {id:"ag3", short:"Agency F3 QC & warm-up", name:"Agency Fase 3 · QC dan warm-up email", when:"~2-3 minggu kalender",
-  goal:"Yakin hasil audit masuk akal sebelum dikirim ke siapa pun, dan domain outreach udah dipanaskan.",
-  gate:"", tasks:[
-   ["W","Jalanin ke 2-3 prospek dummy, cek manual pakai checklist CRO (CTA, load speed, mobile-friendly, trust signal, copy benefit)","Ini QC manual lo sebelum percaya hasil LLM. 5 menit per prospek, gak perlu jadi expert dulu."],
-   ["W","Mulai warm-up email domain baru, volume kecil dulu","Domain baru langsung kirim banyak email = ditandai spam. Mulai beberapa email per hari, naik pelan-pelan."],
-   ["W","Setup tracker leads di Sheets/Airtable","Gak perlu CRM berat. Satu sheet: siapa udah dikontak, kapan, statusnya apa."]
-  ]},
- {id:"ag4", short:"Agency F4 Outreach", name:"Agency Fase 4 · Filter ICP dan mulai outreach", when:"~2-4 minggu kalender, lanjut terus setelahnya",
-  goal:"Outreach pertama keluar ke prospek yang beneran cocok, bukan leads random.",
-  gate:"", tasks:[
-   ["W","Filter leads: self-hosted/WordPress, niche spesifik (plumbing/HVAC/roofing), exclude platform besar","Kegagalan sebelumnya karena leads random dari Apollo. Yang udah pakai Shopify dkk biasanya udah punya tim/solusi sendiri, gak butuh audit lo."],
-   ["W","Kirim outreach volume kecil, pantau reply rate","Kirim ke 10-20 dulu, lihat reply rate-nya, baru naikin. Jangan langsung nembak ratusan."],
-   ["W","Begitu ada yang tertarik ke fix service, broker ke freelancer, ambil margin","Di sinilah revenue asli masuk. Lo ambil margin, gak perlu jadi tukang eksekusi fix sendiri."]
-  ]},
- {id:"ageval", short:"Evaluasi 8-10 minggu", name:"Titik evaluasi · 8-10 minggu sejak outreach pertama", when:"Dihitung sejak outreach mulai jalan, bukan sejak hari 1 project",
-  goal:"Cek jujur: worth dilanjutin apa adanya, atau perlu diubah.",
-  gate:"Sudah tinjau tiga pilihan dan mengambil keputusan sadar: (1) Lanjut apa adanya, ada sinyal positif (reply rate, minat fix service). (2) Ubah ICP/niche karena reply rate rendah. (3) Kurangi jam agency, alihkan ke ML karena sinyalnya tidak sepadan dengan jam yang masuk.",
-  tasks:[]}
-];
-var AGENCY_PHASES = AGENCY_RAW.map(function(ph){
-  return {
-    id:ph.id, short:ph.short, name:ph.name, when:ph.when,
-    goal:ph.goal, gate:ph.gate, gateId: ph.gate ? ph.id+"-gate" : null,
-    tasks: ph.tasks.map(function(t,i){
-      return {id:ph.id+"-"+(i+1), tag:t[0], title:t[1], note:t[2]||"", ph:ph.id};
-    })
-  };
-});
-AGENCY_PHASES.forEach(function(p){ p.tasks.forEach(function(t){VALID[t.id]=1;}); if(p.gateId) VALID[p.gateId]=1; });
-
 /* ---------- State ---------- */
 var storageOK = true;
 function todayISO(){
@@ -579,31 +524,6 @@ function phasesHTML(){
   }).join("");
 }
 
-function agencyTotals(){
-  var n=0,m=0; AGENCY_PHASES.forEach(function(p){ p.tasks.forEach(function(t){ m++; if(state.done[t.id]) n++; }); });
-  return {n:n,m:m};
-}
-function agencySummaryHTML(){
-  var s=agencyTotals(), pct=s.m?Math.round(s.n/s.m*100):0;
-  var evalDone=!!state.done["ageval-gate"];
-  return '<div class="meter big" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="Progres jalur agency"><i style="width:'+pct+'%"></i></div>'+
-    '<p class="sumtext"><b>'+s.n+' dari '+s.m+' tugas agency</b> selesai. Titik evaluasi 8-10 minggu: '+(evalDone?'sudah dilakukan.':'belum.')+'</p>';
-}
-function agencyPhasesHTML(){
-  return AGENCY_PHASES.map(function(ph){
-    var c=counts(ph), pct=c.m?Math.round(c.n/c.m*100):0;
-    var list=ph.tasks.length?'<ul class="tasks">'+ph.tasks.map(function(t){return taskHTML(t,"agency");}).join("")+'</ul>':'';
-    var gate="";
-    if(ph.gateId){
-      var gd=!!state.done[ph.gateId];
-      gate='<label class="gate'+(gd?' done':'')+'"><input type="checkbox" data-tid="'+ph.gateId+'" data-ctx="agency"'+(gd?' checked':'')+'><span><b>Keputusan evaluasi</b>'+ph.gate+'</span></label>';
-    }
-    return '<section class="phase" id="ag-'+ph.id+'"><details data-ph="'+ph.id+'"'+(openSet[ph.id]?' open':'')+'>'+
-      '<summary><span class="ph-title"><span><b>'+ph.name+'</b><span class="ph-when">'+ph.when+'</span></span></span>'+
-      (c.m?'<span class="ph-prog"><span class="meter" aria-hidden="true"><i style="width:'+pct+'%"></i></span>'+c.n+'/'+c.m+'</span>':'')+'</summary>'+
-      '<div class="body"><p class="goal">'+ph.goal+'</p>'+list+gate+'</div></details></section>';
-  }).join("");
-}
 function render(){
   var a=document.activeElement, key=null;
   if(a && a.dataset && a.dataset.tid) key=a.dataset.tid+"|"+(a.dataset.ctx||"");
@@ -613,8 +533,6 @@ function render(){
   document.getElementById("next").innerHTML=nextHTML();
   document.getElementById("filters").innerHTML=filtersHTML();
   document.getElementById("phases").innerHTML=phasesHTML();
-  document.getElementById("agency-summary").innerHTML=agencySummaryHTML();
-  document.getElementById("agency-phases").innerHTML=agencyPhasesHTML();
   document.getElementById("storage-warn").hidden=storageOK;
   if(key){
     var p=key.split("|");
