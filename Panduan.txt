@@ -4,7 +4,7 @@ git commit -m "message" = menyimpan commit
 
 git remote add <namarepo> <urlrepo> = menambahkan alias repo (biasanya origin)
 git remote -v = check alias repo
-
+git rm =delete file dari repo dan local
 git branch <namabranch> = add branch
 git branch = check branch
 git switch <namabranch> = switch branch
