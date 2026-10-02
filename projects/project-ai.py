@@ -10,7 +10,7 @@ resp = requests.post(
     json={
         "model": "openbmb/MiniCPM5-2B:latest",
         "messages": [{"role": "user", "content": prompt}],
-        "stream": False
+        "stream": True
     }
 )
 
