@@ -12,7 +12,14 @@ git switch -c <namabranch? = add branch + switch
 
 git push <namarepo> <branch> = push ke alias repo dan ke branch (Contoh: git push origin main)
 
-
 tips pakai suffix --cached hanya hapus di repo gh, bukan local
 
 sumber belajar OOP baru = realpython.com
+
+python -m venv .[nama venv] = Buat virtual environment Python
+
+.\.[nama venv]\Scripts\activate.bat = run venv
+
+deactivate = quit venv
+
+pip freeze > requirements.txt = bikin requirements.txt (untuk update juga samaa)
